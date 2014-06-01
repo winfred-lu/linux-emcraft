@@ -374,7 +374,7 @@ __romfsinfo:
 	.long	CONFIG_MTD_UCLINUX_PHYADDR	@ r6 RomFS start dddress
 	.long	_end				@ r7 Kernel end address. This is used in "uclinuc.c"
 
-_relocate_romfs:
+__relocate_romfs:
 	adr 	r4, __romfsinfo
 	ldmia	r4!, {r6, r7}
 
@@ -400,7 +400,7 @@ _relocate_romfs:
 	sub 	r4, r4, #4
 	add 	fp, r7, fp			@ fp = dst_end-4
 	sub 	fp, fp, #4
-	1: 	ldr 	r5, [r4]
+1: 	ldr 	r5, [r4]
 	str 	r5, [fp]
 	sub 	r4, r4, #4
 	sub 	fp, fp, #4
@@ -408,7 +408,7 @@ _relocate_romfs:
 	bne 	1b
 	ldr 	r5, [r4]			@ read last byte from src
 	str 	r5, [fp]			@ write last byte to the dst
-mov 	pc, lr
+	mov 	pc, lr
 ENDPROC(__relocate_romfs)
 #endif
 
