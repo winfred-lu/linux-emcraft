@@ -19,22 +19,18 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <asm/io.h>
-#include <asm/sections.h>
 
 /****************************************************************************/
 
-struct map_info uclinux_romfs_map = {
-#ifdef CONFIG_MTD_UCLINUX_RELOCATE
+extern char _ebss;
+
+struct map_info uclinux_ram_map = {
 	.name = "RAM",
-	.phys = (unsigned long)_end,
-#else
-	.name = "ROM",
-	.phys = (unsigned long)CONFIG_MTD_UCLINUX_PHYADDR,
-#endif
+	.phys = (unsigned long)&_ebss,
 	.size = 0,
 };
 
-static struct mtd_info *uclinux_romfs_mtdinfo;
+static struct mtd_info *uclinux_ram_mtdinfo;
 
 /****************************************************************************/
 
@@ -64,17 +60,13 @@ static int __init uclinux_mtd_init(void)
 	struct mtd_info *mtd;
 	struct map_info *mapp;
 
-	mapp = &uclinux_romfs_map;
+	mapp = &uclinux_ram_map;
 	if (!mapp->size)
 		mapp->size = PAGE_ALIGN(ntohl(*((unsigned long *)(mapp->phys + 8))));
 	mapp->bankwidth = 4;
 
-#ifdef CONFIG_MTD_UCLINUX_RELOCATE
 	printk("uclinux[mtd]: RAM probe address=0x%x size=0x%x\n",
-#else
-	printk("uclinux[mtd]: ROM probe address=0x%x size=0x%x\n",
-#endif
-		(int) mapp->phys, (int) mapp->size);
+	       	(int) mapp->phys, (int) mapp->size);
 
 	mapp->virt = ioremap_nocache(mapp->phys, mapp->size);
 
@@ -85,11 +77,7 @@ static int __init uclinux_mtd_init(void)
 
 	simple_map_init(mapp);
 
-#ifdef CONFIG_MTD_UCLINUX_RELOCATE
 	mtd = do_map_probe("map_ram", mapp);
-#else
-	mtd = do_map_probe("map_rom", mapp);
-#endif
 	if (!mtd) {
 		printk("uclinux[mtd]: failed to find a mapping?\n");
 		iounmap(mapp->virt);
@@ -100,7 +88,7 @@ static int __init uclinux_mtd_init(void)
 	mtd->point = uclinux_point;
 	mtd->priv = mapp;
 
-	uclinux_romfs_mtdinfo = mtd;
+	uclinux_ram_mtdinfo = mtd;
 #ifdef CONFIG_MTD_PARTITIONS
 	add_mtd_partitions(mtd, uclinux_romfs, NUM_PARTITIONS);
 #else
@@ -114,18 +102,18 @@ static int __init uclinux_mtd_init(void)
 
 static void __exit uclinux_mtd_cleanup(void)
 {
-	if (uclinux_romfs_mtdinfo) {
+	if (uclinux_ram_mtdinfo) {
 #ifdef CONFIG_MTD_PARTITIONS
-		del_mtd_partitions(uclinux_romfs_mtdinfo);
+		del_mtd_partitions(uclinux_ram_mtdinfo);
 #else
-		del_mtd_device(uclinux_romfs_mtdinfo);
+		del_mtd_device(uclinux_ram_mtdinfo);
 #endif
-		map_destroy(uclinux_romfs_mtdinfo);
-		uclinux_romfs_mtdinfo = NULL;
+		map_destroy(uclinux_ram_mtdinfo);
+		uclinux_ram_mtdinfo = NULL;
 	}
-	if (uclinux_romfs_map.virt) {
-		iounmap((void *) uclinux_romfs_map.virt);
-		uclinux_romfs_map.virt = 0;
+	if (uclinux_ram_map.virt) {
+		iounmap((void *) uclinux_ram_map.virt);
+		uclinux_ram_map.virt = 0;
 	}
 }
 
@@ -136,6 +124,6 @@ module_exit(uclinux_mtd_cleanup);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Greg Ungerer <gerg@snapgear.com>");
-MODULE_DESCRIPTION("Generic RAM/ROM based MTD for uClinux");
+MODULE_DESCRIPTION("Generic RAM based MTD for uClinux");
 
 /****************************************************************************/

@@ -107,9 +107,6 @@ int stm32_device_get(void)
 	case PLATFORM_STM32_STM_DISCO:
 		r = DEVICE_STM32F439II;
 		break;
-	case PLATFORM_STM32_STM32429_DISCO:
-		r = DEVICE_STM32F429ZI;
-		break;
 #endif
 	default:
 #ifdef CONFIG_ARCH_STM32F1
@@ -143,8 +140,6 @@ static int __init stm32_platform_parse(char *s)
 		stm32_platform = PLATFORM_STM32_STM_STM32F439_SOM;
 	else if (!strcmp(s, "stm-disco"))
 		stm32_platform = PLATFORM_STM32_STM_DISCO;
-	else if (!strcmp(s, "stm32429-disco"))
-		stm32_platform = PLATFORM_STM32_STM32429_DISCO;
 #endif
 
 	return 1;
